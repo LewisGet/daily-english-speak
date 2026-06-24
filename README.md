@@ -1,16 +1,52 @@
-# React + Vite
+# 🗣️ English Speak Practice & Pronunciation Partner
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A premium, modern React application built to help learners practice English speaking, listening, and pronunciation. It utilizes the native browser **Web Speech API** for Text-to-Speech (TTS) reading and Speech Recognition (voice input evaluation).
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **📖 Reading Board**: Click on any word to hear its pronunciation in isolation at a slower speed (`0.75x`) to master syllables.
+- **🔊 Text-to-Speech (TTS) with Highlighting**: 
+  - Highlights words dynamically *in real time* as they are read aloud.
+  - Adjust speed rate (`0.5x` to `2.0x`) and voice pitch.
+  - Select from a list of local English speaker voices (US, UK, Australia, etc.).
+- **🎙️ Speech Practice & Accuracy Scoring**:
+  - Record your voice reading sentences aloud.
+  - Dynamic visual voice wave animation when recording.
+  - Generates an **Accuracy Score Gauge** showing the percentage of correctly pronounced words.
+  - **Dynamic Word Feedback Alignment**: Uses a dynamic programming word alignment algorithm to highlight correctly spoken words in **green** and missed/incorrect words in **red**.
+- **📚 Curated Exercises & Custom Input**:
+  - Pre-loaded categories: *Daily Conversations*, *Business & Travel*, *Tongue Twisters*, and *Short Stories*.
+  - Paste any custom text/article to practice with it immediately.
+- **🌗 Dark / Light Mode Support**: Glassmorphic styling adapts gracefully to both dark and light modes.
 
-## React Compiler
+## 🚀 Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
 
-## Expanding the Oxlint configuration
+Make sure you have Node.js and NPM installed.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### Installation
+
+1. Install project dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Start the local development server:
+   ```bash
+   npm run dev
+   ```
+
+3. Open your browser and navigate to `http://localhost:5173`.
+
+### 🌐 Browser Support
+
+- **Text-to-Speech (SpeechSynthesis)**: Supported in all modern browsers (Chrome, Edge, Safari, Firefox).
+- **Speech Recognition (SpeechRecognition)**: Supported in Google Chrome, Safari, and Microsoft Edge. *Note: Brave browser and Firefox do not support voice input out-of-the-box.*
+
+## 🛠️ Technology Stack
+
+- **Framework**: React (Vite)
+- **Styling**: Vanilla CSS (CSS Custom Properties, Glassmorphism, animations)
+- **Speech Engines**: Web Speech API (`window.speechSynthesis` and `webkitSpeechRecognition`)
+- **Alignment Engine**: Levenshtein-based DP LCS word alignment for pronunciation feedback.
