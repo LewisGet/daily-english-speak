@@ -1,5 +1,19 @@
 import React from 'react';
 
+/**
+ * Determines the visual styling class for a word token based on current speaking and evaluation states.
+ * Uses early returns to avoid nested if-else statements.
+ */
+const determineTokenHighlightClass = (isSpeaking, currentWordIndex, index, evaluatedTokens) => {
+  if (isSpeaking && currentWordIndex === index) {
+    return 'speaking-active';
+  }
+  if (evaluatedTokens[index]) {
+    return `feedback-${evaluatedTokens[index]}`;
+  }
+  return '';
+};
+
 export const ReadingBoard = ({
   tokens,
   isSpeaking,
@@ -28,13 +42,12 @@ export const ReadingBoard = ({
             );
           }
           
-          // Determine highlight style
-          let highlightClass = '';
-          if (isSpeaking && currentWordIndex === index) {
-            highlightClass = 'speaking-active';
-          } else if (evaluatedTokens[index]) {
-            highlightClass = `feedback-${evaluatedTokens[index]}`;
-          }
+          const highlightClass = determineTokenHighlightClass(
+            isSpeaking,
+            currentWordIndex,
+            index,
+            evaluatedTokens
+          );
           
           return (
             <span

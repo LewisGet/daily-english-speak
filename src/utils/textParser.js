@@ -1,26 +1,29 @@
 /**
- * Parse text into word and non-word tokens
+ * Parses raw input text into separate word and punctuation token objects.
+ * 
  * @param {string} text - The input sentence/text
  * @returns {Array<object>} - Array of token objects
  */
-export const parseTextToTokens = (text) => {
-  if (!text) return [];
+export const convertRawTextToTokens = (text) => {
+  if (!text) {
+    return [];
+  }
 
   const regex = /(\w+)/g;
   let match;
   let lastIndex = 0;
-  const newTokens = [];
+  const tokens = [];
 
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      newTokens.push({
+      tokens.push({
         text: text.substring(lastIndex, match.index),
         isWord: false,
         startIndex: lastIndex,
         endIndex: match.index
       });
     }
-    newTokens.push({
+    tokens.push({
       text: match[0],
       isWord: true,
       startIndex: match.index,
@@ -30,7 +33,7 @@ export const parseTextToTokens = (text) => {
   }
 
   if (lastIndex < text.length) {
-    newTokens.push({
+    tokens.push({
       text: text.substring(lastIndex),
       isWord: false,
       startIndex: lastIndex,
@@ -38,5 +41,5 @@ export const parseTextToTokens = (text) => {
     });
   }
 
-  return newTokens;
+  return tokens;
 };

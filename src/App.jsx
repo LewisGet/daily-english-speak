@@ -3,8 +3,8 @@ import './App.css';
 
 // Utilities
 import { PRACTICE_CATEGORIES } from './utils/constants';
-import { alignWords } from './utils/alignment';
-import { parseTextToTokens } from './utils/textParser';
+import { alignOriginalAndSpokenWords } from './utils/alignment';
+import { convertRawTextToTokens } from './utils/textParser';
 
 // Components
 import { Header } from './components/Header';
@@ -54,7 +54,7 @@ function App() {
 
   // Parse text into word and non-word tokens
   useEffect(() => {
-    const parsedTokens = parseTextToTokens(text);
+    const parsedTokens = convertRawTextToTokens(text);
     setTokens(parsedTokens);
     tokensRef.current = parsedTokens;
   }, [text]);
@@ -67,14 +67,16 @@ function App() {
     setVoices(enVoices);
     voicesRef.current = enVoices;
     
-    if (enVoices.length > 0 && !selectedVoiceNameRef.current) {
-      const defaultVoice = enVoices.find(v => v.name.includes('Google') && v.lang.includes('US'))
-                           || enVoices.find(v => v.lang.includes('US'))
-                           || enVoices.find(v => v.lang.includes('GB'))
-                           || enVoices[0];
-      setSelectedVoiceName(defaultVoice.name);
-      selectedVoiceNameRef.current = defaultVoice.name;
+    if (enVoices.length === 0 || selectedVoiceNameRef.current) {
+      return;
     }
+    
+    const defaultVoice = enVoices.find(v => v.name.includes('Google') && v.lang.includes('US'))
+                         || enVoices.find(v => v.lang.includes('US'))
+                         || enVoices.find(v => v.lang.includes('GB'))
+                         || enVoices[0];
+    setSelectedVoiceName(defaultVoice.name);
+    selectedVoiceNameRef.current = defaultVoice.name;
   };
 
   useEffect(() => {
@@ -92,66 +94,70 @@ function App() {
   // Initialize Speech Recognition
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const rec = new SpeechRecognition();
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.lang = 'en-US';
-      
-      rec.onstart = () => {
-        setIsListening(true);
-        setSpokenText('');
-        setEvaluatedTokens({});
-        setAccuracy(null);
-      };
-      
-      rec.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        evaluateSpeech(transcript);
-      };
-      
-      rec.onerror = (event) => {
-        console.error("Speech Recognition Error:", event.error);
-        setIsListening(false);
-        if (event.error === 'no-speech') {
-          alert("We didn't hear anything. Please try again, speak clearly and make sure your microphone is working.");
-        }
-      };
-      
-      rec.onend = () => {
-        setIsListening(false);
-      };
-      
-      recognitionRef.current = rec;
-      setRecognitionSupported(true);
-    } else {
+    if (!SpeechRecognition) {
       setRecognitionSupported(false);
+      return;
     }
+
+    const rec = new SpeechRecognition();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = 'en-US';
+    
+    rec.onstart = () => {
+      setIsListening(true);
+      setSpokenText('');
+      setEvaluatedTokens({});
+      setAccuracy(null);
+    };
+    
+    rec.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      evaluateSpokenTranscriptAgainstOriginal(transcript);
+    };
+    
+    rec.onerror = (event) => {
+      console.error("Speech Recognition Error:", event.error);
+      setIsListening(false);
+      if (event.error === 'no-speech') {
+        alert("We didn't hear anything. Please try again, speak clearly and make sure your microphone is working.");
+      }
+    };
+    
+    rec.onend = () => {
+      setIsListening(false);
+    };
+    
+    recognitionRef.current = rec;
+    setRecognitionSupported(true);
   }, []);
 
   // Compare spoken text vs original sentence tokens
-  const evaluateSpeech = (transcript) => {
+  const evaluateSpokenTranscriptAgainstOriginal = (transcript) => {
     setSpokenText(transcript);
     const currentTokens = tokensRef.current;
     const wordTokens = currentTokens.filter(t => t.isWord);
-    if (wordTokens.length === 0) return;
+    if (wordTokens.length === 0) {
+      return;
+    }
     
     // Clean and split strings into words (lowercase, alphanumeric only)
     const wordTokensClean = wordTokens.map(t => t.text.toLowerCase().replace(/[^a-z0-9]/g, ''));
     const spokenWords = transcript.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9]/g, '')).filter(w => w.length > 0);
     
-    const matchedOriginalIndicesSet = alignWords(wordTokensClean, spokenWords);
+    const matchedOriginalIndicesSet = alignOriginalAndSpokenWords(wordTokensClean, spokenWords);
     
     // Assign evaluation feedback (correct/incorrect) to each token
     const newEvaluated = {};
     let wordIndexCount = 0;
     
     currentTokens.forEach((token, index) => {
-      if (token.isWord) {
-        const isMatched = matchedOriginalIndicesSet.has(wordIndexCount);
-        newEvaluated[index] = isMatched ? 'correct' : 'incorrect';
-        wordIndexCount++;
+      if (!token.isWord) {
+        return;
       }
+      const isMatched = matchedOriginalIndicesSet.has(wordIndexCount);
+      newEvaluated[index] = isMatched ? 'correct' : 'incorrect';
+      wordIndexCount++;
     });
     
     setEvaluatedTokens(newEvaluated);
@@ -161,7 +167,7 @@ function App() {
   };
 
   // Handle Text-To-Speech (TTS)
-  const handleSpeak = () => {
+  const toggleTextToSpeechPlayback = () => {
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
@@ -170,7 +176,7 @@ function App() {
     }
     
     if (isListening) {
-      handleListen(); // stop listening
+      toggleSpeechRecognitionListening(); // stop listening
     }
     
     // Clear evaluation highlights when listening to TTS
@@ -181,22 +187,26 @@ function App() {
     
     const utterance = new SpeechSynthesisUtterance(text);
     const voiceObj = voices.find(v => v.name === selectedVoiceName);
-    if (voiceObj) utterance.voice = voiceObj;
+    if (voiceObj) {
+      utterance.voice = voiceObj;
+    }
     utterance.rate = rate;
     utterance.pitch = pitch;
     
     // Boundary highlights words as they are read
     utterance.onboundary = (event) => {
-      if (event.name === 'word') {
-        const charIndex = event.charIndex;
-        const currentTokens = tokensRef.current;
-        const matchIndex = currentTokens.findIndex(
-          (token) => charIndex >= token.startIndex && charIndex < token.endIndex
-        );
-        if (matchIndex !== -1) {
-          setCurrentWordIndex(matchIndex);
-        }
+      if (event.name !== 'word') {
+        return;
       }
+      const charIndex = event.charIndex;
+      const currentTokens = tokensRef.current;
+      const matchIndex = currentTokens.findIndex(
+        (token) => charIndex >= token.startIndex && charIndex < token.endIndex
+      );
+      if (matchIndex === -1) {
+        return;
+      }
+      setCurrentWordIndex(matchIndex);
     };
     
     utterance.onend = () => {
@@ -214,15 +224,19 @@ function App() {
   };
 
   // Speak a single clicked word slow
-  const handleWordClick = (token) => {
-    if (!token.isWord) return;
+  const playSingleWordPronunciation = (token) => {
+    if (!token.isWord) {
+      return;
+    }
     
     setClickedWord(token);
     
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(token.text);
     const voiceObj = voices.find(v => v.name === selectedVoiceName);
-    if (voiceObj) utterance.voice = voiceObj;
+    if (voiceObj) {
+      utterance.voice = voiceObj;
+    }
     utterance.rate = 0.75; // Slower rate for pronunciation drilling
     utterance.pitch = pitch;
     
@@ -230,32 +244,32 @@ function App() {
   };
 
   // Handle Speech Recognition listening
-  const handleListen = () => {
+  const toggleSpeechRecognitionListening = () => {
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
       setCurrentWordIndex(-1);
     }
     
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome, Safari or Microsoft Edge.");
+      return;
+    }
+
     if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    } else {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.start();
-        } catch (err) {
-          console.error("Failed to start speech recognition:", err);
-        }
-      } else {
-        alert("Speech recognition is not supported in this browser. Please use Chrome, Safari or Microsoft Edge.");
-      }
+      recognitionRef.current.stop();
+      return;
+    }
+    
+    try {
+      recognitionRef.current.start();
+    } catch (err) {
+      console.error("Failed to start speech recognition:", err);
     }
   };
 
   // Change selected practicing item
-  const handleSelectSentence = (categoryIndex, itemIndex, sentenceText) => {
+  const selectPracticeExercise = (categoryIndex, itemIndex, sentenceText) => {
     setSelectedCategory(PRACTICE_CATEGORIES[categoryIndex].id);
     setSelectedItemIndex(itemIndex);
     setText(sentenceText);
@@ -271,9 +285,11 @@ function App() {
   };
 
   // Handle custom typed input
-  const handleCustomTextSubmit = (e) => {
+  const loadCustomPracticeText = (e) => {
     e.preventDefault();
-    if (!customText.trim()) return;
+    if (!customText.trim()) {
+      return;
+    }
     
     setSelectedCategory('custom');
     setSelectedItemIndex(0);
@@ -299,10 +315,10 @@ function App() {
         <Sidebar
           selectedCategory={selectedCategory}
           selectedItemIndex={selectedItemIndex}
-          onSelectSentence={handleSelectSentence}
+          onSelectSentence={selectPracticeExercise}
           customText={customText}
           setCustomText={setCustomText}
-          onCustomTextSubmit={handleCustomTextSubmit}
+          onCustomTextSubmit={loadCustomPracticeText}
         />
 
         <section className="practice-panel">
@@ -311,7 +327,7 @@ function App() {
             isSpeaking={isSpeaking}
             currentWordIndex={currentWordIndex}
             evaluatedTokens={evaluatedTokens}
-            onWordClick={handleWordClick}
+            onWordClick={playSingleWordPronunciation}
             clickedWord={clickedWord}
             setClickedWord={setClickedWord}
           />
@@ -331,13 +347,13 @@ function App() {
               pitch={pitch}
               setPitch={setPitch}
               isSpeaking={isSpeaking}
-              onSpeak={handleSpeak}
+              onSpeak={toggleTextToSpeechPlayback}
             />
 
             <SpeechPractice
               recognitionSupported={recognitionSupported}
               isListening={isListening}
-              onListen={handleListen}
+              onListen={toggleSpeechRecognitionListening}
               accuracy={accuracy}
             />
           </div>
