@@ -8,7 +8,7 @@ export const SpeechPractice = ({
   accuracy
 }) => {
   return (
-    <div className="card">
+    <div className="card speech-practice-card">
       <h2 className="card-title">🎙️ Speech Practice</h2>
       <div className="practice-container">
         {!recognitionSupported && (

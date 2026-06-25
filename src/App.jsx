@@ -46,6 +46,10 @@ function App() {
   // Theme state
   const [isLightMode, setIsLightMode] = useState(false);
 
+  // Sidebar Drawer state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+
   // References for async events
   const tokensRef = useRef([]);
   const voicesRef = useRef([]);
@@ -309,10 +313,13 @@ function App() {
       <Header 
         isLightMode={isLightMode} 
         onToggleTheme={() => setIsLightMode(!isLightMode)} 
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
       <main className="app-main">
         <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
           selectedCategory={selectedCategory}
           selectedItemIndex={selectedItemIndex}
           onSelectSentence={selectPracticeExercise}

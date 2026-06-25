@@ -24,7 +24,7 @@ export const ReadingBoard = ({
   setClickedWord
 }) => {
   return (
-    <div className="card" style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+    <div className="card reading-board-card" style={{ display: 'flex', flexDirection: 'column' }}>
       <h2 className="card-title" style={{ justifyContent: 'space-between' }}>
         <span>📖 Reading Board</span>
         <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'normal' }}>

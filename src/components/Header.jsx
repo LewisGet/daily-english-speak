@@ -1,10 +1,18 @@
 import React from 'react';
-import { LogoIcon, SunIcon, MoonIcon } from './Icons';
+import { LogoIcon, SunIcon, MoonIcon, MenuIcon } from './Icons';
 
-export const Header = ({ isLightMode, onToggleTheme }) => {
+export const Header = ({ isLightMode, onToggleTheme, onToggleSidebar }) => {
   return (
     <header className="app-header">
       <div className="header-brand">
+        <button 
+          className="btn-icon btn-menu-toggle" 
+          onClick={onToggleSidebar}
+          aria-label="Open study exercises"
+          title="Open Exercises"
+        >
+          <MenuIcon />
+        </button>
         <div className="brand-icon">
           <LogoIcon />
         </div>
@@ -23,3 +31,4 @@ export const Header = ({ isLightMode, onToggleTheme }) => {
     </header>
   );
 };
+
