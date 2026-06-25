@@ -32,6 +32,28 @@ export const Sidebar = ({
         </div>
 
         <div className="drawer-content">
+          {/* Custom text card */}
+          <div className="card">
+            <h2 className="card-title">✍️ Custom Material</h2>
+            <form 
+              onSubmit={(e) => {
+                onCustomTextSubmit(e);
+                onClose(); // Auto-close sidebar on custom text loading
+              }} 
+              className="custom-input-area"
+            >
+              <textarea
+                className="custom-textarea"
+                placeholder="Paste or type your own English text here to practice speaking..."
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+              />
+              <button type="submit" className="btn-primary" disabled={!customText.trim()}>
+                Load Custom Text
+              </button>
+            </form>
+          </div>
+
           {/* Categories select list */}
           <div className="card">
             <h2 className="card-title">📚 Study Exercises</h2>
@@ -59,28 +81,6 @@ export const Sidebar = ({
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Custom text card */}
-          <div className="card">
-            <h2 className="card-title">✍️ Custom Material</h2>
-            <form 
-              onSubmit={(e) => {
-                onCustomTextSubmit(e);
-                onClose(); // Auto-close sidebar on custom text loading
-              }} 
-              className="custom-input-area"
-            >
-              <textarea
-                className="custom-textarea"
-                placeholder="Paste or type your own English text here to practice speaking..."
-                value={customText}
-                onChange={(e) => setCustomText(e.target.value)}
-              />
-              <button type="submit" className="btn-primary" disabled={!customText.trim()}>
-                Load Custom Text
-              </button>
-            </form>
           </div>
         </div>
       </section>

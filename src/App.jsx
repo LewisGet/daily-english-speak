@@ -8,7 +8,7 @@ import { convertRawTextToTokens } from './utils/textParser';
 
 // Components
 import { Header } from './components/Header';
-import { Footer } from './components/Footer';
+
 import { Sidebar } from './components/Sidebar';
 import { ReadingBoard } from './components/ReadingBoard';
 import { ScoreCard } from './components/ScoreCard';
@@ -367,7 +367,7 @@ function App() {
         </section>
       </main>
 
-      <Footer />
+
     </div>
   );
 }
