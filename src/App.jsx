@@ -15,9 +15,48 @@ import { ScoreCard } from './components/ScoreCard';
 import { ReaderSettings } from './components/ReaderSettings';
 import { SpeechPractice } from './components/SpeechPractice';
 
+// Helper to extract initial state from URL hash
+const getInitialStateFromHash = () => {
+  let initialText = PRACTICE_CATEGORIES[0].items[0];
+  let initialCategory = PRACTICE_CATEGORIES[0].id;
+  let initialItemIndex = 0;
+  let initialCustomText = '';
+
+  if (typeof window !== 'undefined' && window.location.hash) {
+    try {
+      const hashText = decodeURIComponent(window.location.hash.slice(1)).trim();
+      if (hashText) {
+        initialText = hashText;
+        // Look for matching item in predefined categories
+        let found = false;
+        for (let catIndex = 0; catIndex < PRACTICE_CATEGORIES.length; catIndex++) {
+          const cat = PRACTICE_CATEGORIES[catIndex];
+          const itemIndex = cat.items.indexOf(hashText);
+          if (itemIndex !== -1) {
+            initialCategory = cat.id;
+            initialItemIndex = itemIndex;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          initialCategory = 'custom';
+          initialItemIndex = 0;
+          initialCustomText = hashText;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to decode hash:", e);
+    }
+  }
+  return { initialText, initialCategory, initialItemIndex, initialCustomText };
+};
+
 function App() {
+  const initialState = getInitialStateFromHash();
+
   // Application State
-  const [text, setText] = useState(PRACTICE_CATEGORIES[0].items[0]);
+  const [text, setText] = useState(initialState.initialText);
   const [tokens, setTokens] = useState([]);
   
   // TTS State
@@ -36,9 +75,9 @@ function App() {
   const [accuracy, setAccuracy] = useState(null); // number (0-100) or null
   
   // Navigation & Custom input
-  const [selectedCategory, setSelectedCategory] = useState(PRACTICE_CATEGORIES[0].id);
-  const [selectedItemIndex, setSelectedItemIndex] = useState(0);
-  const [customText, setCustomText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(initialState.initialCategory);
+  const [selectedItemIndex, setSelectedItemIndex] = useState(initialState.initialItemIndex);
+  const [customText, setCustomText] = useState(initialState.initialCustomText);
   
   // Pronunciation detail helper
   const [clickedWord, setClickedWord] = useState(null);
@@ -135,6 +174,34 @@ function App() {
     recognitionRef.current = rec;
     setRecognitionSupported(true);
   }, []);
+
+  // Handle hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hashText = window.location.hash ? decodeURIComponent(window.location.hash.slice(1)).trim() : '';
+      if (hashText && hashText !== text) {
+        const { initialText, initialCategory, initialItemIndex, initialCustomText } = getInitialStateFromHash();
+        setText(initialText);
+        setSelectedCategory(initialCategory);
+        setSelectedItemIndex(initialItemIndex);
+        if (initialCategory === 'custom') {
+          setCustomText(initialCustomText);
+        }
+        
+        // Reset state
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+        setCurrentWordIndex(-1);
+        setSpokenText('');
+        setEvaluatedTokens({});
+        setAccuracy(null);
+        setClickedWord(null);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [text]);
 
   // Compare spoken text vs original sentence tokens
   const evaluateSpokenTranscriptAgainstOriginal = (transcript) => {
@@ -278,6 +345,9 @@ function App() {
     setSelectedItemIndex(itemIndex);
     setText(sentenceText);
     
+    // Update URL hash
+    window.location.hash = encodeURIComponent(sentenceText);
+    
     // Clear and stop active actions
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
@@ -298,6 +368,9 @@ function App() {
     setSelectedCategory('custom');
     setSelectedItemIndex(0);
     setText(customText);
+    
+    // Update URL hash
+    window.location.hash = encodeURIComponent(customText.trim());
     
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
